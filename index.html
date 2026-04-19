@@ -727,10 +727,10 @@ function saveEditEntry() {
   entry.extras = [...editExtras];
 
   save();
-  closeEditModal();
   renderList();
   showToast('✓ Updated!');
   syncAllToSheets();
+  closeEditModal();
 }
 
 function closeEditModal() {
