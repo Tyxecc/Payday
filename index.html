@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+https://tyxecc.github.io/Payday/<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -673,32 +673,77 @@ function renderList() {
   }).join('');
 }
 
+let checkListEntries = [];
+let checkListIndex = 0;
+let checkListIssues = [];
+
 function showCheckList() {
-  const sorted = [...state.entries].sort((a, b) => parseInt(a.ro) - parseInt(b.ro));
-  const content = document.getElementById('checkListContent');
-
-  content.innerHTML = sorted.map(e => {
-    const total = totalHours(e);
-    const extrasText = (e.extras || [])
-      .filter(x => x.hours > 0 || x.note)
-      .map(x => {
-        const parts = [];
-        if (x.hours > 0) parts.push('+' + parseFloat(x.hours).toFixed(1) + 'h');
-        if (x.note) parts.push(x.note);
-        return parts.join(' ');
-      }).join(', ');
-    return `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div>
-          <div style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700">${e.ro}</div>
-          ${extrasText ? `<div style="font-size:12px;color:var(--muted);margin-top:2px">${extrasText}</div>` : ''}
-        </div>
-        <div style="font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:var(--accent)">${total.toFixed(1)}</div>
-      </div>
-    `;
-  }).join('');
-
+  checkListEntries = [...state.entries].sort((a, b) => parseInt(a.ro) - parseInt(b.ro));
+  checkListIndex = 0;
+  checkListIssues = [];
+  renderCheckCard();
   document.getElementById('checkListModal').classList.add('show');
+}
+
+function renderCheckCard() {
+  const content = document.getElementById('checkListContent');
+  const total = checkListEntries.length;
+
+  if (checkListIndex >= total) {
+    // Done — show issues
+    const issuesList = checkListIssues.length > 0
+      ? checkListIssues.map(e => {
+          const extrasText = (e.extras || []).filter(x => x.hours > 0 || x.note)
+            .map(x => [x.hours > 0 ? '+' + parseFloat(x.hours).toFixed(1) + 'h' : '', x.note].filter(Boolean).join(' ')).join(', ');
+          return `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+            <span style="font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:var(--danger)">${e.ro}</span>
+            <span style="font-family:'Space Mono',monospace;font-size:14px;margin-left:12px">${totalHours(e).toFixed(1)}h</span>
+            ${extrasText ? `<div style="font-size:12px;color:var(--muted);margin-top:3px">${extrasText}</div>` : ''}
+          </div>`;
+        }).join('')
+      : '<div style="text-align:center;padding:20px;color:var(--accent);font-size:16px;font-weight:700">✅ All good!</div>';
+
+    content.innerHTML = `
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:32px">🏁</div>
+        <div style="font-size:16px;font-weight:700;margin-top:8px">Done! ${total} cars checked</div>
+        ${checkListIssues.length > 0 ? `<div style="color:var(--danger);font-size:13px;margin-top:4px">${checkListIssues.length} issue${checkListIssues.length > 1 ? 's' : ''} found</div>` : ''}
+      </div>
+      ${checkListIssues.length > 0 ? `<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Issues:</div>` : ''}
+      ${issuesList}
+    `;
+    return;
+  }
+
+  const e = checkListEntries[checkListIndex];
+  const total_hrs = totalHours(e);
+  const extrasText = (e.extras || []).filter(x => x.hours > 0 || x.note)
+    .map(x => [x.hours > 0 ? '+' + parseFloat(x.hours).toFixed(1) + 'h' : '', x.note].filter(Boolean).join(' ')).join(', ');
+
+  content.innerHTML = `
+    <div style="text-align:center;margin-bottom:8px;font-size:12px;color:var(--muted)">${checkListIndex + 1} of ${total}</div>
+    <div style="background:var(--surface);border-radius:16px;padding:32px 20px;text-align:center;margin-bottom:20px">
+      <div style="font-family:'Space Mono',monospace;font-size:13px;color:var(--muted);margin-bottom:8px">RO NUMBER</div>
+      <div style="font-family:'Space Mono',monospace;font-size:48px;font-weight:700;color:var(--text);line-height:1">${e.ro}</div>
+      <div style="font-family:'Space Mono',monospace;font-size:32px;font-weight:700;color:var(--accent);margin-top:12px">${total_hrs.toFixed(1)}h</div>
+      ${extrasText ? `<div style="font-size:13px;color:var(--muted);margin-top:10px">${extrasText}</div>` : ''}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <button type="button" onclick="checkOk()" style="background:#4caf50;color:#fff;border:none;border-radius:12px;padding:18px;font-size:22px;font-weight:700;cursor:pointer">✓ OK</button>
+      <button type="button" onclick="checkIssue()" style="background:var(--danger);color:#fff;border:none;border-radius:12px;padding:18px;font-size:22px;font-weight:700;cursor:pointer">✗ Issue</button>
+    </div>
+  `;
+}
+
+function checkOk() {
+  checkListIndex++;
+  renderCheckCard();
+}
+
+function checkIssue() {
+  checkListIssues.push(checkListEntries[checkListIndex]);
+  checkListIndex++;
+  renderCheckCard();
 }
 
 function closeCheckList() {
