@@ -1142,7 +1142,7 @@ function updateSyncStatus(status) {
 }
 
 // ─── FORMAT HOURS ───────────────────────────────────────────────────────────
-function fh(n) { return parseFloat(n).toString(); }
+function fh(n) { return parseFloat(parseFloat(n).toFixed(10)) + ""; }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 function getPeriodString() {
