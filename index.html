@@ -915,14 +915,14 @@ function renderList() {
         <div class="entry-stripe" style="background:${color}"></div>
         <div class="entry-left">
           <div class="entry-ro">#${e.ro}</div>
-          <div class="entry-advisor" style="color:${color}">${e.advisor}</div>
+          <div class="entry-advisor">${e.advisor}</div>
           ${extrasText ? `<div class="entry-extras">${extrasText}</div>` : ''}
           <div class="entry-date">${e.date}</div>
         </div>
         <div class="entry-right">
-          <div class="entry-hours" style="color:${color}">${total.toFixed(2)}</div>
+          <div class="entry-hours">${total.toFixed(2)}</div>
           <div style="display:flex;gap:8px">
-            <button class="entry-delete" onclick="editEntry(${e.id})" style="color:var(--accent2)">✏️</button>
+            <button class="entry-delete" onclick="editEntry(${e.id})">✏️</button>
             <button class="entry-delete" onclick="deleteEntry(${e.id})">🗑</button>
           </div>
         </div>
@@ -1141,12 +1141,13 @@ function renderSummary() {
     const total = data.main + data.extra;
     html += `
       <div class="advisor-summary-card">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:${color};border-radius:4px 0 0 4px"></div>
         <div class="adv-top">
           <div>
-            <div class="adv-name" style="color:${color}">${advisor}</div>
+            <div class="adv-name">${advisor}</div>
             <div class="adv-jobs">${data.jobs} car${data.jobs !== 1 ? 's' : ''}</div>
           </div>
-          <div class="adv-hours-total" style="color:${color}">${total.toFixed(2)}</div>
+          <div class="adv-hours-total">${total.toFixed(2)}</div>
         </div>
         ${(data.extra > 0) ? `
         <div class="adv-breakdown">
@@ -1162,8 +1163,8 @@ function renderSummary() {
         <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
           ${data.extrasList.map(x => `
             <div style="font-size:12px;color:var(--muted);margin-bottom:3px">
-              <span style="font-family:'Space Mono',monospace">#${x.ro}</span>
-              ${x.hours > 0 ? `<span style="color:var(--text)"> +${parseFloat(x.hours).toFixed(1)}</span>` : ''}
+              <span style="font-weight:600;color:var(--text)">#${x.ro}</span>
+              ${x.hours > 0 ? `<span> +${parseFloat(x.hours).toFixed(1)}</span>` : ''}
               ${x.note ? `<span> — ${x.note}</span>` : ''}
             </div>
           `).join('')}
