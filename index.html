@@ -406,6 +406,7 @@
       <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/..." style="font-size:13px">
     </div>
     <button class="btn-primary" onclick="saveScriptUrl()" style="margin-bottom:8px">Save & Test Connection</button>
+    <button class="btn-secondary" onclick="restoreFromCloud()" style="margin-bottom:8px">☁️ Restore from Cloud</button>
   </div>
 </div>
 
@@ -854,7 +855,31 @@ function saveScriptUrl() {
   }
 }
 
-async function testConnection() {
+async function restoreFromCloud() {
+  if (!state.scriptUrl) { showToast('⚠️ No Script URL set!'); return; }
+  showToast('⏳ Restoring...');
+  try {
+    const res = await fetch(state.scriptUrl + '?action=restore');
+    const data = await res.json();
+    if (data.status === 'ok') {
+      if (!data.entries || data.entries.length === 0) {
+        showToast('☁️ No data found in cloud'); return;
+      }
+      if (confirm(`Found ${data.entries.length} entries in cloud. Restore?`)) {
+        state.entries = data.entries;
+        if (data.periodStart) state.periodStart = data.periodStart;
+        save();
+        updateHeaderPeriod();
+        showToast(`✅ Restored ${data.entries.length} entries!`);
+        showTab('list');
+      }
+    } else {
+      showToast('❌ Restore failed');
+    }
+  } catch (e) {
+    showToast('❌ Connection error');
+  }
+}
   updateSyncStatus('syncing');
   try {
     await callSheets({ action: 'test' });
