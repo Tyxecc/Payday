@@ -647,10 +647,13 @@ function renderSummary() {
 
   const advisorMap = {};
   state.entries.forEach(e => {
-    if (!advisorMap[e.advisor]) advisorMap[e.advisor] = { jobs: 0, main: 0, extra: 0 };
+    if (!advisorMap[e.advisor]) advisorMap[e.advisor] = { jobs: 0, main: 0, extra: 0, extrasList: [] };
     advisorMap[e.advisor].jobs++;
     advisorMap[e.advisor].main += e.mainHours;
     advisorMap[e.advisor].extra += e.extras.reduce((s, x) => s + x.hours, 0);
+    e.extras.forEach(x => {
+      if (x.hours > 0 || x.note) advisorMap[e.advisor].extrasList.push({ ro: e.ro, hours: x.hours, note: x.note });
+    });
   });
 
   const grandTotal = Object.values(advisorMap).reduce((s, a) => s + a.main + a.extra, 0);
@@ -686,6 +689,15 @@ function renderSummary() {
             <div class="adv-breakdown-label">Extras</div>
             <div class="adv-breakdown-value">${data.extra.toFixed(2)}</div>
           </div>
+        </div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+          ${data.extrasList.map(x => `
+            <div style="font-size:12px;color:var(--muted);margin-bottom:3px">
+              <span style="font-family:'Space Mono',monospace">#${x.ro}</span>
+              ${x.hours > 0 ? `<span style="color:var(--text)"> +${parseFloat(x.hours).toFixed(1)}</span>` : ''}
+              ${x.note ? `<span> — ${x.note}</span>` : ''}
+            </div>
+          `).join('')}
         </div>` : ''}
       </div>
     `;
@@ -693,6 +705,10 @@ function renderSummary() {
 
   html += `
     <div class="action-buttons">
+      ${(state.failedQueue && state.failedQueue.length > 0) ? `
+      <button class="btn-secondary" style="color:var(--warn);border-color:var(--warn)" onclick="retryFailedQueue()">
+        ⚠️ Retry Sync (${state.failedQueue.length} pending)
+      </button>` : ''}
       <button class="btn-secondary" onclick="copyReport()">📋 Copy Report (WhatsApp)</button>
       <button class="btn-danger" onclick="openPaydayModal()">💰 PAY DAY — Close Period</button>
     </div>
@@ -831,10 +847,40 @@ async function syncToSheets(action, data) {
   ind.classList.add('show');
   try {
     await callSheets({ action, ...data });
+    // Remove from failed queue if was there
+    state.failedQueue = (state.failedQueue || []).filter(q => q.data.id !== data.id);
+    save();
   } catch (e) {
     console.error('Sync error:', e);
+    // Add to failed queue to retry later
+    if (action === 'add') {
+      if (!state.failedQueue) state.failedQueue = [];
+      const already = state.failedQueue.find(q => q.data.id === data.id);
+      if (!already) state.failedQueue.push({ action, data });
+      save();
+      showToast('⚠️ Saved locally, will retry');
+    }
   } finally {
     setTimeout(() => ind.classList.remove('show'), 1000);
+  }
+}
+
+async function retryFailedQueue() {
+  if (!state.scriptUrl || !state.failedQueue || !state.failedQueue.length) return;
+  const queue = [...state.failedQueue];
+  let synced = 0;
+  for (const item of queue) {
+    try {
+      await callSheets({ action: item.action, ...item.data });
+      state.failedQueue = state.failedQueue.filter(q => q.data.id !== item.data.id);
+      synced++;
+    } catch (e) {
+      break; // Stop if still failing
+    }
+  }
+  if (synced > 0) {
+    save();
+    showToast(`✅ Synced ${synced} pending entries`);
   }
 }
 
@@ -892,6 +938,11 @@ document.getElementById('paydayModal').addEventListener('click', function(e) {
 populateAdvisorSelect();
 updateHeaderPeriod();
 updateSyncStatus(state.scriptUrl ? 'disconnected' : '');
+
+// Auto retry failed queue on startup
+if (state.scriptUrl && state.failedQueue && state.failedQueue.length > 0) {
+  setTimeout(() => retryFailedQueue(), 2000);
+}
 </script>
 </body>
 </html>
