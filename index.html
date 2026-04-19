@@ -721,6 +721,13 @@ function saveEditEntry() {
 
   if (!newRo) { alert('Enter RO number!'); return; }
 
+  // Auto-add any unsaved extra fields
+  const pendingH = parseFloat(document.getElementById('editExtraHours').value) || 0;
+  const pendingNote = document.getElementById('editExtraNote').value.trim();
+  if (pendingH || pendingNote) {
+    editExtras.push({ hours: pendingH, note: pendingNote });
+  }
+
   entry.ro = newRo;
   entry.mainHours = newHours;
   entry.advisor = newAdvisor;
