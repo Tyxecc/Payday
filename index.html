@@ -615,11 +615,34 @@ function renderList() {
         </div>
         <div class="entry-right">
           <div class="entry-hours" style="color:${color}">${total.toFixed(2)}</div>
-          <button class="entry-delete" onclick="deleteEntry(${e.id})">🗑</button>
+          <div style="display:flex;gap:8px">
+            <button class="entry-delete" onclick="editEntry(${e.id})" style="color:var(--accent2)">✏️</button>
+            <button class="entry-delete" onclick="deleteEntry(${e.id})">🗑</button>
+          </div>
         </div>
       </div>
     `;
   }).join('');
+}
+
+function editEntry(id) {
+  const entry = state.entries.find(e => e.id === id);
+  if (!entry) return;
+
+  const newRo = prompt('RO Number:', entry.ro);
+  if (newRo === null) return;
+  const newHours = prompt('Main Hours:', entry.mainHours);
+  if (newHours === null) return;
+
+  const parsed = parseFloat(newHours);
+  if (isNaN(parsed)) { showToast('Invalid hours!'); return; }
+
+  entry.ro = newRo.trim();
+  entry.mainHours = parsed;
+  save();
+  renderList();
+  showToast('✓ Updated!');
+  syncToSheets('add', entry);
 }
 
 function deleteEntry(id) {
@@ -725,7 +748,7 @@ function buildReport() {
     advisorMap[e.advisor].push(e);
   });
 
-  let text = `PAY DAY REPORT\n${getPeriodString()}\nTechnician: Valerii | Employee #120\n${'─'.repeat(28)}\n\n`;
+  let text = `PAY DAY REPORT\n${getPeriodString()}\nTechnician: Valerii | Employee #120\n${'─'.repeat(32)}\n\n`;
 
   Object.entries(advisorMap).forEach(([advisor, entries]) => {
     text += `${advisor.toUpperCase()}\n`;
@@ -736,7 +759,9 @@ function buildReport() {
         if (x.note) parts.push(x.note);
         return parts.join(' ');
       }).join(', ');
-      text += `  ${e.ro}  ${parseFloat(e.mainHours).toFixed(1)}${extrasText ? ' (' + extrasText + ')' : ''}\n`;
+      const hrs = parseFloat(e.mainHours).toFixed(1);
+      const extras = extrasText ? `  (${extrasText})` : '';
+      text += `  ${e.ro}  —  ${hrs}${extras}\n`;
     });
     text += '\n';
   });
