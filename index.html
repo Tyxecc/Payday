@@ -643,13 +643,14 @@ function editEntry(id) {
   save();
   renderList();
   showToast('✓ Updated!');
-  syncToSheets('add', entry);
+  syncToSheets('update', entry);
 }
 
 function deleteEntry(id) {
   state.entries = state.entries.filter(e => e.id !== id);
   save();
   renderList();
+  syncToSheets('delete', { id });
 }
 
 function clearAllEntries() {
