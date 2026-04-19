@@ -582,7 +582,7 @@ function addEntry() {
   document.getElementById('mainHours').value = '';
   renderExtrasChips();
   showToast('✓ Entry added');
-  syncToSheets('add', entry);
+  syncAllToSheets();
 }
 
 // ─── TOTAL HOURS ──────────────────────────────────────────────────────────────
@@ -643,14 +643,14 @@ function editEntry(id) {
   save();
   renderList();
   showToast('✓ Updated!');
-  syncToSheets('update', entry);
+  syncAllToSheets();
 }
 
 function deleteEntry(id) {
   state.entries = state.entries.filter(e => e.id !== id);
   save();
   renderList();
-  syncToSheets('delete', { id });
+  syncAllToSheets();
 }
 
 function clearAllEntries() {
@@ -893,25 +893,17 @@ async function testConnection() {
   }
 }
 
-async function syncToSheets(action, data) {
+async function syncAllToSheets() {
   if (!state.scriptUrl) return;
   const ind = document.getElementById('syncingIndicator');
   ind.classList.add('show');
   try {
-    await callSheets({ action, ...data });
-    // Remove from failed queue if was there
-    state.failedQueue = (state.failedQueue || []).filter(q => q.data.id !== data.id);
+    await callSheets({ action: 'syncAll', entries: state.entries, periodStart: state.periodStart });
+    state.failedQueue = [];
     save();
   } catch (e) {
     console.error('Sync error:', e);
-    // Add to failed queue to retry later
-    if (action === 'add') {
-      if (!state.failedQueue) state.failedQueue = [];
-      const already = state.failedQueue.find(q => q.data.id === data.id);
-      if (!already) state.failedQueue.push({ action, data });
-      save();
-      showToast('⚠️ Saved locally, will retry');
-    }
+    showToast('⚠️ Saved locally, will retry');
   } finally {
     setTimeout(() => ind.classList.remove('show'), 1000);
   }
