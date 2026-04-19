@@ -880,7 +880,8 @@ async function restoreFromCloud() {
     showToast('❌ Connection error');
   }
 }
-  updateSyncStatus('syncing');
+
+async function testConnection() {
   try {
     await callSheets({ action: 'test' });
     updateSyncStatus('connected');
