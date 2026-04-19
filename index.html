@@ -725,7 +725,7 @@ function buildReport() {
     advisorMap[e.advisor].push(e);
   });
 
-  let text = `PAY DAY REPORT\n${getPeriodString()}\n${'─'.repeat(28)}\n\n`;
+  let text = `PAY DAY REPORT\n${getPeriodString()}\nTechnician: Valerii | Employee #120\n${'─'.repeat(28)}\n\n`;
 
   Object.entries(advisorMap).forEach(([advisor, entries]) => {
     text += `${advisor.toUpperCase()}\n`;
