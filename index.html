@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -651,7 +651,7 @@ function renderList() {
   list.innerHTML = state.entries.map(e => {
     const color = getAdvisorColor(e.advisor);
     const total = totalHours(e);
-    const extrasText = e.extras.map(x => (x.hours > 0 ? '+' + parseFloat(x.hours).toFixed(1) + 'h ' : '') + x.note).join(', ');
+    const extrasText = e.extras.map(x => (x.hours > 0 ? '+' + fh(x.hours) + 'h ' : '') + x.note).join(', ');
     return `
       <div class="entry-card">
         <div class="entry-stripe" style="background:${color}"></div>
@@ -662,7 +662,7 @@ function renderList() {
           <div class="entry-date">${e.date}</div>
         </div>
         <div class="entry-right">
-          <div class="entry-hours" style="color:${color}">${total.toFixed(2)}</div>
+          <div class="entry-hours" style="color:${color}">${fh(total)}</div>
           <div style="display:flex;gap:8px">
             <button class="entry-delete" onclick="editEntry(${e.id})" style="color:var(--accent2)">✏️</button>
             <button class="entry-delete" onclick="deleteEntry(${e.id})">🗑</button>
@@ -694,10 +694,10 @@ function renderCheckCard() {
     const issuesList = checkListIssues.length > 0
       ? checkListIssues.map(e => {
           const extrasText = (e.extras || []).filter(x => x.hours > 0 || x.note)
-            .map(x => [x.hours > 0 ? '+' + parseFloat(x.hours).toFixed(1) + 'h' : '', x.note].filter(Boolean).join(' ')).join(', ');
+            .map(x => [x.hours > 0 ? '+' + fh(x.hours) + 'h' : '', x.note].filter(Boolean).join(' ')).join(', ');
           return `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
             <span style="font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:var(--danger)">${e.ro}</span>
-            <span style="font-family:'Space Mono',monospace;font-size:14px;margin-left:12px">${totalHours(e).toFixed(1)}h</span>
+            <span style="font-family:'Space Mono',monospace;font-size:14px;margin-left:12px">${fh(totalHours(e))}h</span>
             ${extrasText ? `<div style="font-size:12px;color:var(--muted);margin-top:3px">${extrasText}</div>` : ''}
           </div>`;
         }).join('')
@@ -718,14 +718,14 @@ function renderCheckCard() {
   const e = checkListEntries[checkListIndex];
   const total_hrs = totalHours(e);
   const extrasText = (e.extras || []).filter(x => x.hours > 0 || x.note)
-    .map(x => [x.hours > 0 ? '+' + parseFloat(x.hours).toFixed(1) + 'h' : '', x.note].filter(Boolean).join(' ')).join(', ');
+    .map(x => [x.hours > 0 ? '+' + fh(x.hours) + 'h' : '', x.note].filter(Boolean).join(' ')).join(', ');
 
   content.innerHTML = `
     <div style="text-align:center;margin-bottom:8px;font-size:12px;color:var(--muted)">${checkListIndex + 1} of ${total}</div>
     <div style="background:var(--surface);border-radius:16px;padding:32px 20px;text-align:center;margin-bottom:20px">
       <div style="font-family:'Space Mono',monospace;font-size:13px;color:var(--muted);margin-bottom:8px">RO NUMBER</div>
       <div style="font-family:'Space Mono',monospace;font-size:48px;font-weight:700;color:var(--text);line-height:1">${e.ro}</div>
-      <div style="font-family:'Space Mono',monospace;font-size:32px;font-weight:700;color:var(--accent);margin-top:12px">${total_hrs.toFixed(1)}h</div>
+      <div style="font-family:'Space Mono',monospace;font-size:32px;font-weight:700;color:var(--accent);margin-top:12px">${fh(total_hrs)}h</div>
       ${extrasText ? `<div style="font-size:13px;color:var(--muted);margin-top:10px">${extrasText}</div>` : ''}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -873,7 +873,7 @@ function renderSummary() {
   let html = `
     <div class="grand-total-card">
       <div class="grand-total-label">Total Hours</div>
-      <div class="grand-total-value">${grandTotal.toFixed(2)}</div>
+      <div class="grand-total-value">${fh(grandTotal)}</div>
       <div class="grand-total-jobs">${totalJobs} cars · ${getPeriodString()}</div>
     </div>
   `;
@@ -888,24 +888,24 @@ function renderSummary() {
             <div class="adv-name" style="color:${color}">${advisor}</div>
             <div class="adv-jobs">${data.jobs} car${data.jobs !== 1 ? 's' : ''}</div>
           </div>
-          <div class="adv-hours-total" style="color:${color}">${total.toFixed(2)}</div>
+          <div class="adv-hours-total" style="color:${color}">${fh(total)}</div>
         </div>
         ${(data.extra > 0) ? `
         <div class="adv-breakdown">
           <div class="adv-breakdown-item">
             <div class="adv-breakdown-label">Regular</div>
-            <div class="adv-breakdown-value">${data.main.toFixed(2)}</div>
+            <div class="adv-breakdown-value">${fh(data.main)}</div>
           </div>
           <div class="adv-breakdown-item">
             <div class="adv-breakdown-label">Extras</div>
-            <div class="adv-breakdown-value">${data.extra.toFixed(2)}</div>
+            <div class="adv-breakdown-value">${fh(data.extra)}</div>
           </div>
         </div>
         <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
           ${data.extrasList.map(x => `
             <div style="font-size:12px;color:var(--muted);margin-bottom:3px">
               <span style="font-family:'Space Mono',monospace">#${x.ro}</span>
-              ${x.hours > 0 ? `<span style="color:var(--text)"> +${parseFloat(x.hours).toFixed(1)}</span>` : ''}
+              ${x.hours > 0 ? `<span style="color:var(--text)"> +${fh(x.hours)}</span>` : ''}
               ${x.note ? `<span> — ${x.note}</span>` : ''}
             </div>
           `).join('')}
@@ -944,11 +944,11 @@ function buildReport() {
     entries.forEach(e => {
       const extrasText = e.extras.map(x => {
         const parts = [];
-        if (x.hours > 0) parts.push('+' + parseFloat(x.hours).toFixed(1));
+        if (x.hours > 0) parts.push('+' + fh(x.hours));
         if (x.note) parts.push(x.note);
         return parts.join(' ');
       }).join(', ');
-      const hrs = parseFloat(e.mainHours).toFixed(1);
+      const hrs = fh(e.mainHours);
       const extras = extrasText ? `  (${extrasText})` : '';
       text += `  ${e.ro}  —  ${hrs}${extras}\n`;
     });
@@ -1140,6 +1140,9 @@ function updateSyncStatus(status) {
     text.textContent = state.scriptUrl ? 'Not connected' : 'Not configured';
   }
 }
+
+// ─── FORMAT HOURS ───────────────────────────────────────────────────────────
+function fh(n) { return parseFloat(n).toString(); }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 function getPeriodString() {
