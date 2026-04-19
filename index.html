@@ -427,6 +427,39 @@
   </div>
 </div>
 
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ Edit Entry</div>
+    <div class="field" style="margin-bottom:12px">
+      <label>RO Number</label>
+      <input type="number" id="editRo" inputmode="numeric">
+    </div>
+    <div class="row-2" style="margin-bottom:12px">
+      <div class="field">
+        <label>Advisor</label>
+        <select id="editAdvisor"></select>
+      </div>
+      <div class="field">
+        <label>Main Hours</label>
+        <input type="number" id="editMainHours" step="0.05" inputmode="decimal">
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Extras</label>
+      <div id="editExtrasList"></div>
+      <div class="extras-add-row" style="margin-top:8px">
+        <input type="number" id="editExtraHours" placeholder="hrs" step="0.05" inputmode="decimal">
+        <input type="text" id="editExtraNote" placeholder="repair, bumper...">
+      </div>
+      <button type="button" class="btn-secondary" style="margin-top:8px;padding:10px" onclick="addEditExtra()">+ Add Extra</button>
+    </div>
+    <button type="button" class="btn-primary" onclick="saveEditEntry()" style="margin-bottom:8px">Save Changes</button>
+    <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+  </div>
+</div>
+
 <div class="syncing-indicator" id="syncingIndicator">↑ syncing...</div>
 <div class="toast" id="toast"></div>
 
@@ -629,24 +662,81 @@ function renderList() {
   }).join('');
 }
 
+let editingId = null;
+let editExtras = [];
+
 function editEntry(id) {
   const entry = state.entries.find(e => e.id === id);
   if (!entry) return;
+  editingId = id;
+  editExtras = [...(entry.extras || [])];
 
-  const newRo = prompt('RO Number:', entry.ro);
-  if (newRo === null) return;
-  const newHours = prompt('Main Hours:', entry.mainHours);
-  if (newHours === null) return;
+  document.getElementById('editRo').value = entry.ro;
+  document.getElementById('editMainHours').value = entry.mainHours;
 
-  const parsed = parseFloat(newHours);
-  if (isNaN(parsed)) { showToast('Invalid hours!'); return; }
+  // Populate advisor select
+  const sel = document.getElementById('editAdvisor');
+  sel.innerHTML = state.advisors.map(a =>
+    `<option value="${a.name}" ${a.name === entry.advisor ? 'selected' : ''}>${a.name}</option>`
+  ).join('');
 
-  entry.ro = newRo.trim();
-  entry.mainHours = parsed;
+  renderEditExtras();
+  document.getElementById('editModal').classList.add('show');
+}
+
+function renderEditExtras() {
+  const list = document.getElementById('editExtrasList');
+  if (!editExtras.length) { list.innerHTML = ''; return; }
+  list.innerHTML = editExtras.map((x, i) => {
+    const label = [x.hours > 0 ? x.hours + 'h' : '', x.note].filter(Boolean).join(' — ');
+    return `<div class="extra-chip" style="margin-bottom:6px">
+      ${label}
+      <button class="chip-remove" onclick="removeEditExtra(${i})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function addEditExtra() {
+  const h = parseFloat(document.getElementById('editExtraHours').value) || 0;
+  const note = document.getElementById('editExtraNote').value.trim();
+  if (!h && !note) return;
+  editExtras.push({ hours: h, note });
+  document.getElementById('editExtraHours').value = '';
+  document.getElementById('editExtraNote').value = '';
+  renderEditExtras();
+}
+
+function removeEditExtra(i) {
+  editExtras.splice(i, 1);
+  renderEditExtras();
+}
+
+function saveEditEntry() {
+  const entry = state.entries.find(e => e.id === editingId);
+  if (!entry) return;
+
+  const newRo = document.getElementById('editRo').value.trim();
+  const newHours = parseFloat(document.getElementById('editMainHours').value) || 0;
+  const newAdvisor = document.getElementById('editAdvisor').value;
+
+  if (!newRo) { alert('Enter RO number!'); return; }
+
+  entry.ro = newRo;
+  entry.mainHours = newHours;
+  entry.advisor = newAdvisor;
+  entry.extras = [...editExtras];
+
   save();
+  closeEditModal();
   renderList();
   showToast('✓ Updated!');
   syncAllToSheets();
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('show');
+  editingId = null;
+  editExtras = [];
 }
 
 function deleteEntry(id) {
@@ -979,6 +1069,9 @@ function showToast(msg) {
 // Close modal on overlay click
 document.getElementById('paydayModal').addEventListener('click', function(e) {
   if (e.target === this) closePaydayModal();
+});
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
 });
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
