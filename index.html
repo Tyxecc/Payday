@@ -526,14 +526,17 @@ function deleteAdvisor(i) {
 function tryAddExtra() {
   const h = parseFloat(document.getElementById('extraHours').value) || 0;
   const note = document.getElementById('extraNote').value.trim();
-  // Only add if at least one field has something
   if (!h && !note) return;
-  // Don't add if user just tabbed from hours to note (note still empty AND hours just filled)
-  // Wait until focus leaves BOTH fields — check activeElement
+
   const active = document.activeElement;
   const hoursEl = document.getElementById('extraHours');
   const noteEl = document.getElementById('extraNote');
-  if (active === hoursEl || active === noteEl) return;
+
+  // If moving from hours to note — wait for note
+  if (active === noteEl) return;
+  // If moving from note to hours — wait for hours
+  if (active === hoursEl && !note) return;
+
   pendingExtras.push({ hours: h, note: note });
   hoursEl.value = '';
   noteEl.value = '';
